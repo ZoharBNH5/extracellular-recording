@@ -1,0 +1,50 @@
+Fs = 40000;            % Sampling frequency in Hz
+Fc = 150;             % Cutoff frequency in Hz
+Wn = Fc / (Fs / 2);   % Normalized cutoff frequency (0 to 1)
+
+[b, a] = butter(4, Wn, 'low'); % Design a 4th-order Butterworth low-pass filter
+
+input_signal =SPK20(: , 1); % Example noisy signal
+filtered_signal = filtfilt(b, a, input_signal); % Apply zero-phase filtering
+
+% Plot results
+t = (0:length(input_signal)-1) / Fs;
+plot(t, filtered_signal, 'r');
+legend('Filtered Signal');
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Low-Pass Filtering with filtfilt');
+
+
+% Generate the spectrogram
+win = hamming(20000);     % Window function (Hamming window)
+n_overlap=round(length(win)*0.25);           % Number of overlapping samples
+nfft = 8192;                % Number of FFT points
+[S, F, T] = spectrogram(filtered_signal, win , n_overlap, nfft, Fs);
+[Pxx, F1] = pwelch(filtered_signal, win ,n_overlap , nfft, Fs);
+smooth_Pxx = movmean(Pxx, 5) 
+
+
+
+
+figure;
+
+
+
+subplot(1, 2, 1);
+imagesc(T, F, 10*log10(abs(S))); % Convert the amplitude to decibels
+axis xy;                      % Flip the y-axis to have low frequencies at the bottom
+xlabel('Time (s)');
+ylabel('Frequency (Hz)');
+ylim([1 600]);
+title('Spectrogram of the channel 20 stand');
+colorbar;                    % Display color bar for decibel values
+
+subplot(1, 2, 2);
+plot(F1, 10*log10(smooth_Pxx));        % Convert PSD to decibels (dB/Hz)
+grid on;
+xlabel('Frequency (Hz)');
+xlim([1 600]);
+ylabel('Power/Frequency (dB/Hz)');
+title('Power Spectral Density Estimate using Welch''s Method');
+
